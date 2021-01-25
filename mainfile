@@ -1,0 +1,678 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "Updated_JacksonModel.ipynb",
+      "provenance": [],
+      "collapsed_sections": []
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "accelerator": "GPU"
+  },
+  "cells": [
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "GmWHKZKPYRpT"
+      },
+      "source": [
+        "#!pip install simpy"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "AVxaNnP9dEIq"
+      },
+      "source": [
+        ""
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "vtuEaaMGYaqi"
+      },
+      "source": [
+        "import simpy\n",
+        "import numpy as np\n",
+        "import random"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "n7tNNTLd0DJp"
+      },
+      "source": [
+        "selection=2\n",
+        "TWTQ2=0.0\n",
+        "TWTQ3=0.0\n",
+        "TWTQ2count=0\n",
+        "TWTQ3count=0"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "Umm3382ci4-9"
+      },
+      "source": [
+        "ArrivalTimeDeviceId={}\n",
+        "ArrivalTimeAtQ1={}\n",
+        "ReleaseTimeAtQ1={}\n",
+        "ServiceTimeAtQ1={}\n",
+        "ArrivalTimeAtQ2={}\n",
+        "ArrivalTimeAtQ3={}\n",
+        "ArrivalTimeAtS1={}\n",
+        "ReleaseTimeAtS1={}\n",
+        "ServiceTimeAtQ2={}\n",
+        "ServiceTimeAtQ3={}\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "R5T2I8vnhiBz"
+      },
+      "source": [
+        "#arrival function\n",
+        "def arrival_time(prio):\n",
+        "    \n",
+        "    if prio ==1:\n",
+        "      return np.random.uniform(1.0)\n",
+        "    if prio ==2:\n",
+        "      return np.random.poisson(1.0028)\n",
+        "    if prio == 3:\n",
+        "      return np.random.poisson(2.0)\n",
+        "    if prio == 4:\n",
+        "      return np.random.uniform(10.0)"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "8KOhQWOmgtgv"
+      },
+      "source": [
+        "def servicetime(tname):\n",
+        "    m,n,o,p = tname.split(\"_\")\n",
+        "    o=int(o)\n",
+        "    #print(\"type of Task:\",type(o))\n",
+        "    #print(\"priority value\",o)\n",
+        "    if o ==1:\n",
+        "      return np.random.uniform(4.5262)\n",
+        "    if o == 2:\n",
+        "      return np.random.uniform(4.5262)\n",
+        "    if o ==3:\n",
+        "      return np.random.uniform(4.5262)\n",
+        "    if o == 4:\n",
+        "      return np.random.uniform(4.5262)"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "W3jLbxLu2YQ-"
+      },
+      "source": [
+        "class Store1():\n",
+        "  def __init__(self,env,initialitem):\n",
+        "        self.env=env\n",
+        "        self.initialitem=initialitem\n",
+        "  def loadData(self,env,int1):\n",
+        "        yield self.env.timeout(0.01)\n",
+        "        yield store.put(int1)\n",
+        "  def putItem(x):\n",
+        "        yield self.env.timeout(0.05)\n",
+        "        yield store.put(x)"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "FcJ0qAIEk26g"
+      },
+      "source": [
+        "def Q1Queue(env1,taskname1):\n",
+        "  env=env1\n",
+        "  taskname=taskname1\n",
+        "  #step5\n",
+        "  ArrivalTimeAtQ1[taskname]=env.now\n",
+        "  with Q1.request() as req:\n",
+        "    #step6\n",
+        "    \n",
+        "    yield req\n",
+        "    yield env.timeout(.011) #time is constant here, you can create custom method to assign custom value here.\n",
+        "    #step7\n",
+        "    ReleaseTimeAtQ1[taskname]=env.now\n",
+        "    #step8\n",
+        "    ServiceTimeAtQ1[taskname]=.011 #it is constant, if it custom valueupdate in dictionary accordingly.\n",
+        "\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "WmbBTR4XHQJb"
+      },
+      "source": [
+        "def FCFSModel(env1,taskname1):\n",
+        "  env=env1\n",
+        "  taskname=taskname1\n",
+        "  #step10\n",
+        "  #call load distributor\n",
+        "  ''' The load distributor model works on a concept of load balancing. If the load of low priority queue is below the \n",
+        "  point, a load shifting model immediately activated and load the high priority tasks into low priority queue.\n",
+        "  for this point we are implmentating only , task type segregation. in future we will include the load balancing and shifting\n",
+        "  model. We need task picking factor to adjust the load of the queues. This feature can only be available on \n",
+        "  weighted queue model.\n",
+        "  '''\n",
+        "  #step11\n",
+        "  #find the task priority value\n",
+        "  a,b,c,d = taskname.split(\"_\")\n",
+        "  Z=int(c)\n",
+        "  #print(len(store.items))\n",
+        "  srvctime=servicetime(taskname)\n",
+        "  if Z in [1,2,3,4]:\n",
+        "    ArrivalTimeAtQ2[taskname]=env.now\n",
+        "    #call Q2Queue\n",
+        "    #yield env.timeout(1) only appended to remove the None Type error value error\n",
+        "    with Q2.request() as reqQ2:\n",
+        "      yield reqQ2\n",
+        "      #check the resource container shared by all the types of task.\n",
+        "      item = yield store.get()\n",
+        "      ArrivalTimeAtS1[taskname]=env.now\n",
+        "      #print(\"Task {} requesting item {}\".format(taskname,item))\n",
+        "      yield env.timeout(srvctime)\n",
+        "      ServiceTimeAtQ2[taskname]=srvctime\n",
+        "      \n",
+        "  else:\n",
+        "    #use for dummy data #otherwise you will get error in Q3 performance\n",
+        "    ArrivalTimeAtQ3[taskname]=env.now\n",
+        "    #call Q3Queue\n",
+        "    ArrivalTimeAtS1[taskname]=env.now\n",
+        "    ServiceTimeAtQ3[taskname]=srvctime\n",
+        "      \n",
+        "  yield store.put('VM')\n",
+        "  #print(\"Task {} release VM at {}\".format(taskname,env.now))\n",
+        "  ReleaseTimeAtS1[taskname]=env.now\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "PwPhpVlHgYyS"
+      },
+      "source": [
+        "def LoadModel(env1,taskname1):\n",
+        "  env=env1\n",
+        "  taskname=taskname1\n",
+        "  global TWTQ2\n",
+        "  global TWTQ3\n",
+        "  global TWTQ2count\n",
+        "  global TWTQ3count\n",
+        "\n",
+        "  #calculate avg waiting time at Q2\n",
+        "  '''\n",
+        "  countD1=0\n",
+        "  WTQ2=0.0\n",
+        "  if len(ArrivalTimeAtQ2.keys())==0:\n",
+        "    WTQ2=0.0\n",
+        "  else:\n",
+        "    for y in ArrivalTimeAtQ2.keys():\n",
+        "      for c in ReleaseTimeAtS1.keys():\n",
+        "        for d in ServiceTimeAtQ2.keys():\n",
+        "          if y==c==d :\n",
+        "            countD1=countD1+1\n",
+        "            \n",
+        "            WTQ2=WTQ2+(ReleaseTimeAtS1[y]-ArrivalTimeAtQ2[y])-ServiceTimeAtQ1[y]\n",
+        "    if countD1!=0:\n",
+        "      WTQ2=WTQ2/countD1\n",
+        "    else:\n",
+        "      WTQ2=0.0\n",
+        "  #calculate avg waiting time at Q3\n",
+        "  countD3=0\n",
+        "  WTQ3=0.0\n",
+        "  if len(ArrivalTimeAtQ3.keys())==0:\n",
+        "    WTQ3=0.0\n",
+        "  else:\n",
+        "    for z in ArrivalTimeAtQ3.keys():\n",
+        "      for e in ReleaseTimeAtS1.keys():\n",
+        "        for f in ServiceTimeAtQ3.keys():\n",
+        "          if z==e==f :\n",
+        "            countD3=countD3+1\n",
+        "            WTQ3=WTQ3+(ReleaseTimeAtS1[z]-ArrivalTimeAtQ3[z])\n",
+        "    if countD3!=0:\n",
+        "      WTQ3=WTQ3/countD3\n",
+        "    else:\n",
+        "      WTQ3=0.0'''\n",
+        "  CL2=len(Q2.queue)\n",
+        "  CL3=len(Q3.queue)\n",
+        "  #print(\"WTQ2 {} and WTQ3 {}\".format(TWTQ2,TWTQ3))\n",
+        "  #print(\"CL2 {} and CL3 {}\".format(CL2,CL3))\n",
+        "  #step10\n",
+        "  #call load distributor\n",
+        "  ''' The load distributor model works on a concept of load balancing. If the load of low priority queue is below the \n",
+        "  point, a load shifting model immediately activated and load the high priority tasks into low priority queue.\n",
+        "  for this point we are implmentating only , task type segregation. in future we will include the load balancing and shifting\n",
+        "  model. We need task picking factor to adjust the load of the queues. This feature can only be available on \n",
+        "  weighted queue model.\n",
+        "  '''\n",
+        "  #step11\n",
+        "  #find the load factor value related to both queues\n",
+        "  srvctime=servicetime(taskname)\n",
+        "  #LFQ2= WTQ2*(CL2/4)/srvctime\n",
+        "  LFQ2= TWTQ2*(CL2/4)\n",
+        "  #LFQ3=WTQ3*(CL3/4)/srvctime\n",
+        "  LFQ3=TWTQ3*(CL3/4)\n",
+        "  #print(\"LFQ2 {} and LFQ3 {}\".format(LFQ2,LFQ3))\n",
+        "  if LFQ2<LFQ3:\n",
+        "    #print(\"Called load model with prio\")\n",
+        "    ArrivalTimeAtQ2[taskname]=env.now\n",
+        "    #call Q2Queue\n",
+        "    #yield env.timeout(1) only appended to remove the None Type error value error\n",
+        "    with Q2.request() as reqQ2:\n",
+        "      yield reqQ2\n",
+        "      #check the resource container shared by all the types of task.\n",
+        "      item = yield store.get()\n",
+        "      ArrivalTimeAtS1[taskname]=env.now\n",
+        "      #print(\"Task {} requesting item {}\".format(taskname,item))\n",
+        "      yield env.timeout(srvctime)\n",
+        "      ServiceTimeAtQ2[taskname]=srvctime\n",
+        "      TWTQ2count=TWTQ2count+1\n",
+        "      TWTQ2=TWTQ2+(((ArrivalTimeAtS1[taskname]-ArrivalTimeAtQ2[taskname])-TWTQ2)/TWTQ2count)\n",
+        "\n",
+        "      \n",
+        "  else:\n",
+        "    #print(\"Called load model with non prio\")\n",
+        "    ArrivalTimeAtQ3[taskname]=env.now\n",
+        "    #call Q3Queue\n",
+        "    with Q3.request() as reqQ3:\n",
+        "      yield reqQ3\n",
+        "      item = yield store.get()\n",
+        "      ArrivalTimeAtS1[taskname]=env.now\n",
+        "      #print(\"Task {} requesting item {}\".format(taskname,item))\n",
+        "      yield env.timeout(srvctime)\n",
+        "      ServiceTimeAtQ3[taskname]=srvctime\n",
+        "      TWTQ3count=TWTQ3count+1\n",
+        "      TWTQ3=TWTQ3+(((ArrivalTimeAtS1[taskname]-ArrivalTimeAtQ3[taskname])-TWTQ3)/TWTQ3count)\n",
+        "  yield store.put('VM')\n",
+        "  #print(\"Task {} release VM at {}\".format(taskname,env.now))\n",
+        "  ReleaseTimeAtS1[taskname]=env.now"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "C-ZnjYcreTmx"
+      },
+      "source": [
+        "def RandomModel(env1,taskname1):\n",
+        "  env=env1\n",
+        "  taskname=taskname1\n",
+        "  #step10\n",
+        "  #call load distributor\n",
+        "  ''' The load distributor model works on a concept of load balancing. If the load of low priority queue is below the \n",
+        "  point, a load shifting model immediately activated and load the high priority tasks into low priority queue.\n",
+        "  for this point we are implmentating only , task type segregation. in future we will include the load balancing and shifting\n",
+        "  model. We need task picking factor to adjust the load of the queues. This feature can only be available on \n",
+        "  weighted queue model.\n",
+        "  '''\n",
+        "  #step11\n",
+        "  list1=[0,1]\n",
+        "  x=random.choice(list1)\n",
+        "  srvctime=servicetime(taskname)\n",
+        "  if x==0:\n",
+        "    ArrivalTimeAtQ2[taskname]=env.now\n",
+        "    #call Q2Queue\n",
+        "    #yield env.timeout(1) only appended to remove the None Type error value error\n",
+        "    with Q2.request() as reqQ2:\n",
+        "      yield reqQ2\n",
+        "      #check the resource container shared by all the types of task.\n",
+        "      item = yield store.get()\n",
+        "      ArrivalTimeAtS1[taskname]=env.now\n",
+        "      #print(\"Task {} requesting item {}\".format(taskname,item))\n",
+        "      yield env.timeout(srvctime)\n",
+        "      ServiceTimeAtQ2[taskname]=srvctime\n",
+        "  else:\n",
+        "    ArrivalTimeAtQ3[taskname]=env.now\n",
+        "    #call Q3Queue\n",
+        "    with Q3.request() as reqQ3:\n",
+        "      yield reqQ3\n",
+        "      item = yield store.get()\n",
+        "      ArrivalTimeAtS1[taskname]=env.now\n",
+        "      #print(\"Task {} requesting item {}\".format(taskname,item))\n",
+        "      yield env.timeout(srvctime)\n",
+        "      ServiceTimeAtQ3[taskname]=srvctime\n",
+        "  yield store.put('VM')\n",
+        "  #print(\"Task {} release VM at {}\".format(taskname,env.now))\n",
+        "  ReleaseTimeAtS1[taskname]=env.now"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "mQffigLC0k6F"
+      },
+      "source": [
+        "def JacksonWeighted(env1,taskname1):\n",
+        "  env=env1\n",
+        "  taskname=taskname1\n",
+        "  #step10\n",
+        "  #call load distributor\n",
+        "  ''' The load distributor model works on a concept of load balancing. If the load of low priority queue is below the \n",
+        "  point, a load shifting model immediately activated and load the high priority tasks into low priority queue.\n",
+        "  for this point we are implmentating only , task type segregation. in future we will include the load balancing and shifting\n",
+        "  model. We need task picking factor to adjust the load of the queues. This feature can only be available on \n",
+        "  weighted queue model.\n",
+        "  '''\n",
+        "  #step11\n",
+        "  #find the task priority value\n",
+        "  a,b,c,d = taskname.split(\"_\")\n",
+        "  Z=int(c)\n",
+        "  #print(len(store.items))\n",
+        "  srvctime=servicetime(taskname)\n",
+        "  if Z in [1,2]:\n",
+        "    ArrivalTimeAtQ2[taskname]=env.now\n",
+        "    #call Q2Queue\n",
+        "    #yield env.timeout(1) only appended to remove the None Type error value error\n",
+        "    with Q2.request() as reqQ2:\n",
+        "      yield reqQ2\n",
+        "      #check the resource container shared by all the types of task.\n",
+        "      item = yield store.get()\n",
+        "      ArrivalTimeAtS1[taskname]=env.now\n",
+        "      #print(\"Task {} requesting item {}\".format(taskname,item))\n",
+        "      yield env.timeout(srvctime)\n",
+        "      ServiceTimeAtQ2[taskname]=srvctime\n",
+        "      \n",
+        "  else:\n",
+        "    ArrivalTimeAtQ3[taskname]=env.now\n",
+        "    #call Q3Queue\n",
+        "    with Q3.request() as reqQ3:\n",
+        "      yield reqQ3\n",
+        "      item = yield store.get()\n",
+        "      ArrivalTimeAtS1[taskname]=env.now\n",
+        "      #print(\"Task {} requesting item {}\".format(taskname,item))\n",
+        "      yield env.timeout(srvctime)\n",
+        "      ServiceTimeAtQ3[taskname]=srvctime\n",
+        "      \n",
+        "  yield store.put('VM')\n",
+        "  #print(\"Task {} release VM at {}\".format(taskname,env.now))\n",
+        "  ReleaseTimeAtS1[taskname]=env.now\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "HucrV9CkYwWC"
+      },
+      "source": [
+        "class GenTask(object):\n",
+        "    def __init__(self, env,name,prio):\n",
+        "      self.env = env\n",
+        "      self.name=name\n",
+        "      self.prio=prio\n",
+        "      #call the modules according to ypur proposed model\n",
+        "      self.action = env.process(self.generator_task())\n",
+        "    def generator_task(self):\n",
+        "      #generate task with arrival time, implement a arrival function to reterive the arrival pattern\n",
+        "        i=0\n",
+        "        while True:\n",
+        "          #step2\n",
+        "          arr=arrival_time(self.prio)\n",
+        "          yield self.env.timeout(arr)\n",
+        "          #additional *step\n",
+        "          taskname=self.name+str(i) \n",
+        "          #step3\n",
+        "          ArrivalTimeDeviceId[taskname]=arr\n",
+        "          #step4 from 4 to 8 steps are executed under Q1Queue method\n",
+        "          #call Q1Queue()\n",
+        "          yield env.process(Q1Queue(env,taskname))\n",
+        "          #step9\n",
+        "          #call comparison model\n",
+        "          if selection ==1:\n",
+        "            #call jackson weighted model\n",
+        "            yield env.process(JacksonWeighted(env,taskname))\n",
+        "            pass\n",
+        "          elif selection ==2:\n",
+        "            #load balancing model\n",
+        "            yield env.process(LoadModel(env,taskname))\n",
+        "          elif selection==3:\n",
+        "            #call FCFS model\n",
+        "            yield env.process(FCFSModel(env,taskname))\n",
+        "          elif selection ==4:\n",
+        "            #call random model\n",
+        "            yield env.process(RandomModel(env,taskname))\n",
+        "          else:\n",
+        "            print(\"Unknown model\")\n",
+        "            exit(0)\n",
+        "          i=i+1"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "J_4g_RV0Zmup"
+      },
+      "source": [
+        "env = simpy.Environment() #creating simpy environment object\n",
+        "#if required create resources such as queue and resource bundle"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "LYr4Zu7LlgW_"
+      },
+      "source": [
+        "Q1 = simpy.Resource(env,capacity=1) #max. capacity 1 server at a time"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "7KykJAzr7e2v"
+      },
+      "source": [
+        "Q2=simpy.Resource(env,capacity=75) # you can set capacity according to your model"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "_EPBoscj8BkF"
+      },
+      "source": [
+        "Q3=simpy.Resource(env,capacity=25) # you can set capacity according to your model"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "9oze1ymiDfJ0"
+      },
+      "source": [
+        "S1=simpy.Store(env,capacity=100) #maximum VMs available"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "aNmqEY8K2yX_"
+      },
+      "source": [
+        "store = simpy.Store(env, capacity=100)"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "Z7gKvvZiE_dx"
+      },
+      "source": [
+        "st1=Store1(env,10)\n",
+        "for i in range(10):\n",
+        "    env.process(st1.loadData(env,'VM'))"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "fOnRx44FYc1L"
+      },
+      "source": [
+        "from numpy.random import choice\n",
+        "tasktype=[1,2,3,4]\n",
+        "pvalues=[0.10,0.15,0.25,.50]\n",
+        "for x in range(200):\n",
+        "  #pr=random.choice(tasktype,pvalues)\n",
+        "  pr=choice(tasktype,p=pvalues)\n",
+        "  GenT = GenTask(env,name=\"healthmonitor_\"+str(x)+\"_\"+str(pr)+\"_\",prio=pr) # there should be corresponding GenT class\n",
+        "  "
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "To9JkM20YjLg"
+      },
+      "source": [
+        "env.run(until=1800) #environment running for t time"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "p1Zse6NANIFS",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "abd64dc8-20ff-4880-f745-73976ed71f4b"
+      },
+      "source": [
+        "print(\"total task generated:\",end=\"; \")\n",
+        "print(len(ArrivalTimeDeviceId.keys()))"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "total task generated:; 6749\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "NBOGIRxdYuuT"
+      },
+      "source": [
+        "#Avg. waiting @ Q1\n",
+        "countD=0\n",
+        "WTQ1=0.0\n",
+        "for x in ArrivalTimeAtQ1.keys():\n",
+        "  for a in ReleaseTimeAtQ1.keys():\n",
+        "    for b in ServiceTimeAtQ1.keys():\n",
+        "      if x==a==b :\n",
+        "        countD=countD+1\n",
+        "        WTQ1=WTQ1+(ReleaseTimeAtQ1[x]-ArrivalTimeAtQ1[x])-ServiceTimeAtQ1[x]\n",
+        "print(\"Avg WT at Q1: ;\",WTQ1/countD)\n",
+        "\n",
+        "#Avg Wating Time @Q2\n",
+        "countD1=0\n",
+        "WTQ2=0.0\n",
+        "for y in ArrivalTimeAtQ2.keys():\n",
+        "  for c in ReleaseTimeAtS1.keys():\n",
+        "    for d in ServiceTimeAtQ2.keys():\n",
+        "      if y==c==d :\n",
+        "        countD1=countD1+1\n",
+        "        #print(\"A {}, R {}, S{}\".format(ArrivalTimeAtQ2[y],ReleaseTimeAtS1[y],ServiceTimeAtQ2[y]))\n",
+        "        WTQ2=WTQ2+(ReleaseTimeAtS1[y]-ArrivalTimeAtQ2[y])-ServiceTimeAtQ1[y]\n",
+        "print(\"Avg WT at Q2: ;\",WTQ2/countD1)\n",
+        "\n",
+        "if (selection !=3):\n",
+        "  #Avg Wating Time @Q3\n",
+        "  countD3=0\n",
+        "  WTQ3=0.0\n",
+        "  for z in ArrivalTimeAtQ3.keys():\n",
+        "    for e in ReleaseTimeAtS1.keys():\n",
+        "      for f in ServiceTimeAtQ3.keys():\n",
+        "        if z==e==f :\n",
+        "          countD3=countD3+1\n",
+        "          WTQ3=WTQ3+(ReleaseTimeAtS1[z]-ArrivalTimeAtQ3[z])\n",
+        "  print(\"Avg WT at Q3: ;\",WTQ3/countD3)\n",
+        "  print(\"Average Response time ;{}\".format(     (((WTQ1/countD + WTQ2/countD1)/2) + ((WTQ1/countD + WTQ3/countD3)/2))))\n",
+        "else:\n",
+        "  print(\"Avg WT at Q3: ;\",0.0)\n",
+        "  print(\"Average Response time ;{}\".format(     (WTQ1/countD + WTQ2/countD1)))"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "7__9mZOVoZW0"
+      },
+      "source": [
+        ""
+      ],
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
